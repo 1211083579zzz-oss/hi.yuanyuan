@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>主播基地住宿登记</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif; background:#0F1117; color:#E8EAF0; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+  ::-webkit-scrollbar { width:5px; height:5px; }
+  ::-webkit-scrollbar-track { background:#1A1D27; }
+  ::-webkit-scrollbar-thumb { background:#333654; border-radius:3px; }
+
+  /* ── HEADER ── */
+  #header {
+    background:#12151F; border-bottom:1.5px solid #1E2130;
+    padding:12px 24px; display:flex; align-items:center; justify-content:space-between;
+    flex-shrink:0; position:sticky; top:0; z-index:50;
+  }
+  .logo { display:flex; align-items:center; gap:12px; }
+  .logo-icon { width:34px; height:34px; border-radius:10px; background:linear-gradient(135deg,#F472B6,#A78BFA); display:flex; align-items:center; justify-content:center; font-size:17px; }
+  .logo-title { font-size:16px; font-weight:700; }
+  .logo-sub { font-size:11px; color:#5A5F7A; margin-top:1px; }
+  .hdr-right { display:flex; align-items:center; gap:8px; }
+
+  /* ── LAYOUT ── */
+  #layout { display:flex; flex:1; overflow:hidden; }
+
+  /* ── SIDEBAR ── */
+  #sidebar {
+    width:210px; background:#12151F; border-right:1.5px solid #1E2130;
+    display:flex; flex-direction:column; flex-shrink:0;
+  }
+  .sb-top { padding:14px 12px 8px; border-bottom:1px solid #1E2130; }
+  .sb-top-label { font-size:10px; color:#3A3F5A; font-weight:700; letter-spacing:.1em; text-transform:uppercase; margin-bottom:8px; padding-left:4px; }
+  .sb-search { background:#1A1D27; border:1.5px solid #2A2D3E; border-radius:8px; color:#E8EAF0; padding:7px 10px; font-size:12px; width:100%; outline:none; }
+  .sb-search:focus { border-color:#A78BFA; }
+  .sb-list { flex:1; overflow-y:auto; padding:8px 8px; }
+  .sb-item {
+    padding:9px 11px; border-radius:10px; cursor:pointer; transition:all .18s;
+    display:flex; align-items:center; gap:8px; border:1.5px solid transparent; margin-bottom:2px;
+  }
+  .sb-item:hover { background:#1E2130; }
+  .sb-item.active { background:#A78BFA18; border-color:#A78BFA60; color:#A78BFA; }
+  .sb-item-icon { font-size:14px; flex-shrink:0; }
+  .sb-item-name { flex:1; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sb-item-count { font-size:11px; font-weight:700; padding:1px 6px; border-radius:20px; flex-shrink:0; }
+  .sb-footer { padding:10px 12px; border-top:1px solid #1E2130; }
+  .btn-add-base {
+    width:100%; background:#A78BFA18; color:#A78BFA; border:1.5px dashed #A78BFA50;
+    border-radius:9px; padding:8px; font-size:12px; font-weight:600; cursor:pointer;
+    transition:all .18s; font-family:inherit;
+  }
+  .btn-add-base:hover { background:#A78BFA28; border-color:#A78BFA; }
+
+  /* ── MAIN ── */
+  #main { flex:1; overflow-y:auto; padding:20px 24px; }
+
+  /* ── STAT BAR ── */
+  #stat-bar { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin-bottom:18px; }
+  .stat-card { background:#161924; border:1.5px solid #252839; border-radius:12px; padding:12px 16px; }
+  .stat-label { font-size:11px; color:#5A5F7A; margin-bottom:4px; }
+  .stat-value { font-size:20px; font-weight:700; }
+
+  /* ── PAGE HEADER ── */
+  .page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:10px; }
+  .page-header-left { display:flex; align-items:center; gap:12px; }
+  .base-avatar { width:42px; height:42px; border-radius:12px; background:#A78BFA20; border:2px solid #A78BFA40; display:flex; align-items:center; justify-content:center; font-size:20px; }
+  .page-title { font-size:20px; font-weight:700; color:#A78BFA; }
+  .page-sub { font-size:12px; color:#5A5F7A; margin-top:2px; }
+
+  /* ── TOOLBAR ── */
+  .toolbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .search-wrap { position:relative; }
+  .search-wrap input { background:#1A1D27; border:1.5px solid #2A2D3E; border-radius:9px; color:#E8EAF0; padding:7px 12px 7px 30px; font-size:12px; width:180px; outline:none; font-family:inherit; transition:border .2s; }
+  .search-wrap input:focus { border-color:#A78BFA; }
+  .search-wrap::before { content:'🔍'; position:absolute; left:8px; top:50%; transform:translateY(-50%); font-size:12px; pointer-events:none; }
+
+  /* ── FORM PANEL ── */
+  #form-panel { background:#161924; border:1.5px solid #A78BFA40; border-radius:16px; padding:20px; margin-bottom:18px; display:none; }
+  .form-panel-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .form-panel-title { font-size:14px; font-weight:700; color:#A78BFA; }
+  .form-row { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:12px; }
+  .form-field label { font-size:11px; color:#6B7080; display:block; margin-bottom:5px; font-weight:600; letter-spacing:.02em; }
+  .form-field input, .form-field select, .form-field textarea {
+    background:#1A1D27; border:1.5px solid #2A2D3E; border-radius:8px;
+    color:#E8EAF0; padding:8px 11px; font-size:13px; width:100%; outline:none;
+    transition:border .2s; font-family:inherit;
+  }
+  .form-field input:focus, .form-field select:focus, .form-field textarea:focus { border-color:#A78BFA; }
+  .form-field textarea { resize:vertical; min-height:54px; }
+  .form-field select option { background:#1A1D27; }
+  .form-field.highlight input, .form-field.highlight select { border-color:#A78BFA40; color:#A78BFA; font-weight:600; }
+  .form-actions { display:flex; gap:8px; margin-top:16px; justify-content:flex-end; }
+
+  /* ── DAYS BADGE ── */
+  .days-display { background:#1A1D27; border:1.5px solid #2A2D3E; border-radius:8px; padding:8px 11px; font-size:13px; font-weight:700; color:#A78BFA; text-align:center; min-height:36px; display:flex; align-items:center; justify-content:center; }
+
+  /* ── DIFF BADGE ── */
+  .diff-display { background:#1A1D27; border:1.5px solid #2A2D3E; border-radius:8px; padding:8px 11px; font-size:13px; font-weight:700; text-align:center; min-height:36px; display:flex; align-items:center; justify-content:center; }
+
+  /* ── RECORDS ── */
+  #records-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:12px; }
+  .rec-card {
+    background:#161924; border:1.5px solid #252839; border-radius:12px;
+    padding:14px 16px; cursor:pointer; transition:all .2s; animation:fadeIn .3s ease;
+  }
+  .rec-card:hover { border-color:#3A3F5A; background:#1C1F30; transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,.3); }
+  .rec-card.has-diff { border-color:#F8717140; }
+  .rec-card-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:10px; }
+  .rec-card-main { display:flex; align-items:center; gap:9px; }
+  .rec-avatar { width:34px; height:34px; border-radius:9px; background:#A78BFA20; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+  .rec-name { font-weight:700; font-size:14px; color:#E8EAF0; }
+  .rec-room { font-size:11px; color:#8B90A8; margin-top:2px; }
+  .rec-actions { display:flex; gap:5px; }
+  .btn-icon { border:none; cursor:pointer; transition:all .18s; border-radius:7px; width:27px; height:27px; font-size:12px; display:flex; align-items:center; justify-content:center; font-family:inherit; }
+  .btn-icon:hover { filter:brightness(1.15); transform:translateY(-1px); }
+  .btn-edit { background:#1E2130; color:#8B90A8; }
+  .btn-del  { background:#2A1A1A; color:#F87171; }
+
+  .rec-dates { display:flex; align-items:center; gap:6px; margin-bottom:10px; font-size:12px; color:#8B90A8; }
+  .rec-dates .arrow { color:#3A3F5A; }
+  .rec-dates .days-tag { background:#A78BFA20; color:#A78BFA; padding:1px 8px; border-radius:20px; font-weight:700; font-size:11px; margin-left:4px; }
+
+  .rec-money { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-bottom:10px; }
+  .rec-money-item { background:#1A1D27; border-radius:8px; padding:7px 10px; }
+  .rec-money-label { font-size:10px; color:#5A5F7A; margin-bottom:2px; }
+  .rec-money-val { font-size:13px; font-weight:700; }
+
+  .rec-footer { display:flex; justify-content:space-between; align-items:center; padding-top:9px; border-top:1px solid #1E2130; flex-wrap:wrap; gap:4px; }
+  .rec-time { font-size:10px; color:#3A3F5A; }
+  .status-tag { display:inline-block; padding:2px 9px; border-radius:20px; font-size:11px; font-weight:700; }
+
+  /* ── EMPTY ── */
+  #empty-state { text-align:center; padding:80px 0; color:#3A3F5A; display:none; }
+  #empty-icon { font-size:52px; margin-bottom:14px; }
+  #empty-title { font-size:16px; margin-bottom:6px; }
+  #empty-sub { font-size:13px; }
+  #no-base { text-align:center; padding:100px 20px; color:#3A3F5A; }
+  #no-base .nb-icon { font-size:56px; margin-bottom:16px; }
+  #no-base .nb-title { font-size:17px; margin-bottom:8px; color:#8B90A8; }
+  #no-base .nb-sub { font-size:13px; }
+
+  /* ── BUTTONS ── */
+  button { border:none; cursor:pointer; font-family:inherit; transition:all .18s; }
+  button:hover { filter:brightness(1.12); }
+  button:active { transform:translateY(0) !important; }
+  .btn-primary { padding:8px 18px; border-radius:9px; font-weight:700; font-size:13px; background:linear-gradient(135deg,#A78BFA,#A78BFA88); color:#0F1117; }
+  .btn-primary:hover { transform:translateY(-1px); }
+  .btn-secondary { background:#1E2130; color:#8B90A8; padding:8px 16px; border-radius:9px; font-size:13px; }
+  .btn-secondary:hover { transform:translateY(-1px); }
+  .btn-danger-full { background:#F87171; color:#fff; padding:9px 20px; border-radius:9px; font-size:13px; font-weight:700; }
+  .btn-sm { background:#1A1D27; color:#6B7080; padding:6px 12px; border-radius:8px; font-size:12px; border:1px solid #2A2D3E; }
+  .btn-sm:hover { color:#E8EAF0; border-color:#3A3F5A; transform:translateY(-1px); }
+
+  /* ── MODAL ── */
+  .modal-bd { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(6px); z-index:300; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .modal { background:#161924; border:1.5px solid #252839; border-radius:18px; padding:24px; max-width:560px; width:100%; max-height:88vh; overflow-y:auto; }
+  .modal-sm { max-width:360px; text-align:center; }
+  .modal-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+  .modal-title { font-size:16px; font-weight:700; }
+  .modal-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .modal-field { background:#1A1D27; border-radius:9px; padding:10px 13px; }
+  .modal-field-key { font-size:11px; color:#5A5F7A; margin-bottom:3px; }
+  .modal-field-val { font-size:13px; color:#E8EAF0; font-weight:500; word-break:break-all; }
+  .modal-footer { display:flex; gap:8px; margin-top:16px; justify-content:flex-end; }
+  .modal-updated { font-size:11px; color:#3A3F5A; margin-top:12px; }
+
+  /* ── TOAST ── */
+  #toast { position:fixed; bottom:26px; right:26px; z-index:999; padding:10px 18px; border-radius:10px; font-size:13px; font-weight:500; box-shadow:0 8px 24px rgba(0,0,0,.5); animation:slideUp .3s ease; display:none; }
+
+  @keyframes slideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes fadeIn  { from{opacity:0} to{opacity:1} }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <div class="logo">
+    <div class="logo-icon">🏠</div>
+    <div>
+      <div class="logo-title">主播基地住宿登记</div>
+      <div class="logo-sub" id="hdr-sub">Streamer Base Registry · 共 0 条记录</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <button class="btn-sm" onclick="exportData()">⬇ 导出</button>
+    <button class="btn-sm" onclick="importData()">⬆ 导入</button>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div id="layout">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sb-top">
+      <div class="sb-top-label">基地列表</div>
+      <input class="sb-search" placeholder="搜索基地…" oninput="filterBases(this.value)" />
+    </div>
+    <div class="sb-list" id="base-list"></div>
+    <div class="sb-footer">
+      <button class="btn-add-base" onclick="openAddBase()">＋ 添加基地</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+
+    <!-- No base selected -->
+    <div id="no-base">
+      <div class="nb-icon">🏠</div>
+      <div class="nb-title">请从左侧选择一个基地</div>
+      <div class="nb-sub">或点击「添加基地」新建基地开始登记</div>
+    </div>
+
+    <!-- Base content (hidden until base selected) -->
+    <div id="base-content" style="display:none">
+
+      <!-- Page header -->
+      <div class="page-header">
+        <div class="page-header-left">
+          <div class="base-avatar" id="base-avatar">🏠</div>
+          <div>
+            <div class="page-title" id="base-title-text">基地名称</div>
+            <div class="page-sub" id="base-subtitle">共 0 条住宿记录</div>
+          </div>
+        </div>
+        <div class="toolbar">
+          <div class="search-wrap">
+            <input type="text" placeholder="搜索主播/房型…" id="rec-search" oninput="renderRecords()" />
+          </div>
+          <button class="btn-sm" onclick="openRenameBase()" title="重命名基地">✏️ 重命名</button>
+          <button class="btn-sm" style="color:#F87171;border-color:#F8717140" onclick="askDeleteBase()" title="删除基地">🗑 删除基地</button>
+          <button class="btn-primary" onclick="openForm()">+ 新增登记</button>
+        </div>
+      </div>
+
+      <!-- Stat bar -->
+      <div id="stat-bar">
+        <div class="stat-card">
+          <div class="stat-label">住宿记录</div>
+          <div class="stat-value" id="stat-total" style="color:#A78BFA">0 条</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">应付总计</div>
+          <div class="stat-value" id="stat-due" style="color:#FCD34D">¥0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">已付总计</div>
+          <div class="stat-value" id="stat-paid" style="color:#34D399">¥0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">差额合计</div>
+          <div class="stat-value" id="stat-diff">¥0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">累计住宿天数</div>
+          <div class="stat-value" id="stat-days" style="color:#93C5FD">0 天</div>
+        </div>
+      </div>
+
+      <!-- Form panel -->
+      <div id="form-panel">
+        <div class="form-panel-header">
+          <div class="form-panel-title" id="form-panel-title">➕ 新增住宿登记</div>
+          <button class="btn-icon btn-edit" style="width:28px;height:28px;font-size:15px" onclick="closeForm()">×</button>
+        </div>
+        <div class="form-row" id="form-row"></div>
+        <div class="form-actions">
+          <button class="btn-secondary" onclick="closeForm()">取消</button>
+          <button class="btn-primary" onclick="handleSave()">确认登记</button>
+        </div>
+      </div>
+
+      <!-- Records -->
+      <div id="records-grid"></div>
+      <div id="empty-state">
+        <div id="empty-icon">🛏️</div>
+        <div id="empty-title">暂无住宿记录</div>
+        <div id="empty-sub">点击右上角「新增登记」开始录入</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- View Modal -->
+<div id="view-modal" class="modal-bd" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-hdr">
+      <div>
+        <div class="modal-title" id="vm-title" style="color:#A78BFA"></div>
+        <div style="font-size:11px;color:#5A5F7A;margin-top:3px" id="vm-sub"></div>
+      </div>
+      <button class="btn-icon btn-edit" style="width:30px;height:30px;font-size:16px" onclick="document.getElementById('view-modal').style.display='none'">×</button>
+    </div>
+    <div class="modal-grid" id="vm-grid"></div>
+    <div class="modal-updated" id="vm-updated"></div>
+    <div class="modal-footer">
+      <button class="btn-secondary" style="color:#F87171" onclick="viewDel()">删除</button>
+      <button class="btn-secondary" onclick="viewEdit()">编辑</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Record Modal -->
+<div id="del-rec-modal" class="modal-bd" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal modal-sm" onclick="event.stopPropagation()">
+    <div style="font-size:40px;margin-bottom:12px">🗑️</div>
+    <div style="font-size:15px;font-weight:700;margin-bottom:7px">确认删除该条记录？</div>
+    <div style="font-size:12px;color:#6B7080;margin-bottom:20px">此操作不可撤销。</div>
+    <div style="display:flex;gap:8px;justify-content:center">
+      <button class="btn-secondary" onclick="document.getElementById('del-rec-modal').style.display='none'">取消</button>
+      <button class="btn-danger-full" onclick="confirmDelRec()">确认删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Base Modal -->
+<div id="del-base-modal" class="modal-bd" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal modal-sm" onclick="event.stopPropagation()">
+    <div style="font-size:40px;margin-bottom:12px">⚠️</div>
+    <div style="font-size:15px;font-weight:700;margin-bottom:7px">确认删除该基地？</div>
+    <div style="font-size:12px;color:#6B7080;margin-bottom:20px">基地下所有住宿记录将一并删除，此操作不可撤销。</div>
+    <div style="display:flex;gap:8px;justify-content:center">
+      <button class="btn-secondary" onclick="document.getElementById('del-base-modal').style.display='none'">取消</button>
+      <button class="btn-danger-full" onclick="confirmDelBase()">确认删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Rename Base Modal -->
+<div id="base-modal" class="modal-bd" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal modal-sm" onclick="event.stopPropagation()" style="text-align:left">
+    <div class="modal-hdr">
+      <div class="modal-title" id="base-modal-title">添加基地</div>
+      <button class="btn-icon btn-edit" style="width:28px;height:28px;font-size:15px" onclick="document.getElementById('base-modal').style.display='none'">×</button>
+    </div>
+    <div style="margin-bottom:12px">
+      <label style="font-size:11px;color:#6B7080;display:block;margin-bottom:5px;font-weight:600">基地名称</label>
+      <input id="base-name-input" type="text" placeholder="如：北京基地、上海直播间…"
+        style="background:#1A1D27;border:1.5px solid #2A2D3E;border-radius:8px;color:#E8EAF0;padding:9px 12px;font-size:13px;width:100%;outline:none;font-family:inherit"
+        onfocus="this.style.borderColor='#A78BFA'" onblur="this.style.borderColor='#2A2D3E'"
+        onkeydown="if(event.key==='Enter')confirmBase()" />
+    </div>
+    <div style="margin-bottom:18px">
+      <label style="font-size:11px;color:#6B7080;display:block;margin-bottom:8px;font-weight:600">基地图标</label>
+      <div id="icon-picker" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn-secondary" onclick="document.getElementById('base-modal').style.display='none'">取消</button>
+      <button class="btn-primary" onclick="confirmBase()">确认</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(event)" />
+
+<script>
+const BASE_ICONS = ['🏠','🏢','🏨','🏩','🏪','🏫','🏬','🏭','🏯','🏰','🗼','🌆','🌇','🌃','🏙️','🎙️','📡','🎬','📺','🌟'];
+const ROOM_TYPES = ['单人间','双人间','三人间','四人间','豪华间','套房','标准间','大床房','上下铺','其他'];
+const PAY_STATUS = ['未付款','部分已付','已结清','超付'];
+
+let data = { bases: [], records: {} }; // bases: [{id,name,icon}], records: {baseId: [...]}
+let activeBaseId = null;
+let editingRecId = null;
+let deletingRecId = null;
+let baseModalMode = 'add'; // 'add' | 'rename'
+let selectedIcon = '🏠';
+let baseFilter = '';
+
+function genId() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+// ── Storage ──
+function save() { try { localStorage.setItem('streamer_base_v1', JSON.stringify(data)); } catch(e){} }
+function load() {
+  try {
+    const d = localStorage.getItem('streamer_base_v1');
+    if (d) data = JSON.parse(d);
+  } catch(e){}
+}
+
+// ── Toast ──
+function toast(msg, type='ok') {
+  const el = document.getElementById('toast');
+  const cfg = {
+    ok:   {bg:'#0F2A1F',border:'#6EE7B7',color:'#6EE7B7',icon:'✅'},
+    err:  {bg:'#4A1A1A',border:'#F87171',color:'#F87171',icon:'❌'},
+    warn: {bg:'#3A2A10',border:'#FCD34D',color:'#FCD34D',icon:'⚠️'},
+  };
+  const c = cfg[type]||cfg.ok;
+  Object.assign(el.style, {background:c.bg, border:`1.5px solid ${c.border}`, color:c.color, display:'block'});
+  el.textContent = c.icon+' '+msg;
+  clearTimeout(el._t);
+  el._t = setTimeout(()=>el.style.display='none', 2500);
+}
+
+// ── Base Operations ──
+function openAddBase() {
+  baseModalMode = 'add';
+  document.getElementById('base-modal-title').textContent = '添加基地';
+  document.getElementById('base-name-input').value = '';
+  selectedIcon = '🏠';
+  renderIconPicker();
+  document.getElementById('base-modal').style.display = 'flex';
+  setTimeout(()=>document.getElementById('base-name-input').focus(), 100);
+}
+
+function openRenameBase() {
+  if (!activeBaseId) return;
+  const base = data.bases.find(b=>b.id===activeBaseId);
+  baseModalMode = 'rename';
+  document.getElementById('base-modal-title').textContent = '重命名基地';
+  document.getElementById('base-name-input').value = base.name;
+  selectedIcon = base.icon || '🏠';
+  renderIconPicker();
+  document.getElementById('base-modal').style.display = 'flex';
+  setTimeout(()=>document.getElementById('base-name-input').focus(), 100);
+}
+
+function renderIconPicker() {
+  const el = document.getElementById('icon-picker');
+  el.innerHTML = '';
+  BASE_ICONS.forEach(ic => {
+    const btn = document.createElement('button');
+    btn.textContent = ic;
+    btn.style.cssText = `width:34px;height:34px;border-radius:8px;font-size:17px;cursor:pointer;transition:all .15s;
+      background:${ic===selectedIcon?'#A78BFA30':'#1A1D27'};
+      border:${ic===selectedIcon?'2px solid #A78BFA':'2px solid #2A2D3E'};font-family:inherit;`;
+    btn.onclick = () => {
+      selectedIcon = ic;
+      renderIconPicker();
+    };
+    el.appendChild(btn);
+  });
+}
+
+function confirmBase() {
+  const name = document.getElementById('base-name-input').value.trim();
+  if (!name) { toast('请输入基地名称','err'); return; }
+  if (baseModalMode === 'add') {
+    const id = genId();
+    data.bases.push({ id, name, icon: selectedIcon });
+    data.records[id] = [];
+    activeBaseId = id;
+    save();
+    toast('基地已添加');
+  } else {
+    const base = data.bases.find(b=>b.id===activeBaseId);
+    if (base) { base.name = name; base.icon = selectedIcon; }
+    save();
+    toast('基地已更新');
+  }
+  document.getElementById('base-modal').style.display = 'none';
+  renderAll();
+}
+
+function askDeleteBase() {
+  document.getElementById('del-base-modal').style.display = 'flex';
+}
+function confirmDelBase() {
+  data.bases = data.bases.filter(b=>b.id!==activeBaseId);
+  delete data.records[activeBaseId];
+  activeBaseId = null;
+  document.getElementById('del-base-modal').style.display = 'none';
+  save();
+  toast('基地已删除','warn');
+  renderAll();
+}
+
+// ── Sidebar ──
+function filterBases(v) { baseFilter = v.toLowerCase(); renderSidebar(); }
+
+function renderSidebar() {
+  const list = document.getElementById('base-list');
+  list.innerHTML = '';
+  const filtered = data.bases.filter(b => !baseFilter || b.name.toLowerCase().includes(baseFilter));
+  if (filtered.length === 0) {
+    list.innerHTML = `<div style="font-size:12px;color:#3A3F5A;text-align:center;padding:20px 0">无匹配基地</div>`;
+    return;
+  }
+  filtered.forEach(base => {
+    const count = (data.records[base.id]||[]).length;
+    const active = base.id === activeBaseId;
+    const div = document.createElement('div');
+    div.className = 'sb-item' + (active?' active':'');
+    div.style.color = active ? '#A78BFA' : '#8B90A8';
+    div.innerHTML = `
+      <span class="sb-item-icon">${base.icon||'🏠'}</span>
+      <span class="sb-item-name" style="font-weight:${active?600:400}">${esc(base.name)}</span>
+      ${count>0?`<span class="sb-item-count" style="background:${active?'#A78BFA30':'#1E2130'};color:${active?'#A78BFA':'#5A5F7A'}">${count}</span>`:''}
+    `;
+    div.onclick = () => { activeBaseId = base.id; renderAll(); };
+    list.appendChild(div);
+  });
+}
+
+// ── Stats ──
+function renderStats() {
+  const recs = data.records[activeBaseId] || [];
+  const due  = recs.reduce((s,r)=>s+(parseFloat(r.due)||0),0);
+  const paid = recs.reduce((s,r)=>s+(parseFloat(r.paid)||0),0);
+  const diff = paid - due;
+  const days = recs.reduce((s,r)=>s+(parseInt(r.days)||0),0);
+  document.getElementById('stat-total').textContent = recs.length+' 条';
+  document.getElementById('stat-due').textContent  = '¥'+fmt(due);
+  document.getElementById('stat-paid').textContent = '¥'+fmt(paid);
+  const de = document.getElementById('stat-diff');
+  de.textContent = (diff>=0?'+':'')+'¥'+fmt(diff);
+  de.style.color = diff > 0 ? '#6EE7B7' : diff < 0 ? '#F87171' : '#E8EAF0';
+  document.getElementById('stat-days').textContent = days+' 天';
+}
+
+// ── Form ──
+const FIELDS = [
+  { key:'streamer', label:'主播',     type:'text', placeholder:'输入主播姓名' },
+  { key:'checkin',  label:'入住日期', type:'date' },
+  { key:'checkout', label:'离店日期', type:'date' },
+  { key:'days',     label:'入住天数', type:'calc', placeholder:'自动计算' },
+  { key:'room',     label:'房型',     type:'select', options: ROOM_TYPES },
+  { key:'due',      label:'应付价格(元)', type:'number', placeholder:'0.00', money:true },
+  { key:'paid',     label:'已付价格(元)', type:'number', placeholder:'0.00', money:true },
+  { key:'diff',     label:'差额',     type:'diff' },
+  { key:'remark',   label:'备注',     type:'textarea' },
+];
+
+function openForm(id=null) {
+  editingRecId = id;
+  const rec = id ? (data.records[activeBaseId]||[]).find(r=>r.id===id) : null;
+  document.getElementById('form-panel-title').textContent = rec ? '✏️ 编辑住宿记录' : '➕ 新增住宿登记';
+  document.getElementById('form-panel').style.display = 'block';
+  buildForm(rec);
+  document.getElementById('form-panel').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function buildForm(rec) {
+  const row = document.getElementById('form-row');
+  row.innerHTML = '';
+  FIELDS.forEach(f => {
+    const div = document.createElement('div');
+    div.className = 'form-field' + (f.money?' highlight':'');
+    div.innerHTML = `<label>${f.label}</label>`;
+
+    if (f.type === 'calc') {
+      const d2 = document.createElement('div');
+      d2.className = 'days-display';
+      d2.id = 'ff_days';
+      d2.textContent = rec?.days ? rec.days+' 天' : '—';
+      div.appendChild(d2);
+    } else if (f.type === 'diff') {
+      const d2 = document.createElement('div');
+      d2.className = 'diff-display';
+      d2.id = 'ff_diff';
+      updateDiff(rec, d2);
+      div.appendChild(d2);
+    } else if (f.type === 'select') {
+      const sel = document.createElement('select');
+      sel.id = 'ff_'+f.key;
+      sel.innerHTML = `<option value="">请选择</option>` + f.options.map(o=>`<option${rec&&rec[f.key]===o?' selected':''}>${o}</option>`).join('');
+      div.appendChild(sel);
+    } else if (f.type === 'textarea') {
+      const ta = document.createElement('textarea');
+      ta.id = 'ff_'+f.key;
+      ta.rows = 2;
+      ta.value = rec?.[f.key]||'';
+      ta.placeholder = f.placeholder||'';
+      div.appendChild(ta);
+    } else {
+      const inp = document.createElement('input');
+      inp.type = f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text';
+      if (f.type === 'number') inp.step = '0.01';
+      inp.id = 'ff_'+f.key;
+      inp.value = rec?.[f.key]||'';
+      inp.placeholder = f.placeholder||'';
+      if (f.key === 'checkin' || f.key === 'checkout') {
+        inp.onchange = () => autoCalcDays();
+      }
+      if (f.key === 'due' || f.key === 'paid') {
+        inp.oninput = () => autoCalcDiff();
+      }
+      div.appendChild(inp);
+    }
+    row.appendChild(div);
+  });
+}
+
+function autoCalcDays() {
+  const ci = document.getElementById('ff_checkin')?.value;
+  const co = document.getElementById('ff_checkout')?.value;
+  const dd = document.getElementById('ff_days');
+  if (!dd) return;
+  if (ci && co) {
+    const d = Math.round((new Date(co)-new Date(ci))/(1000*3600*24));
+    dd.textContent = d >= 0 ? d+' 天' : '⚠ 日期异常';
+    dd.style.color = d >= 0 ? '#A78BFA' : '#F87171';
+    dd.dataset.val = d >= 0 ? d : '';
+  } else {
+    dd.textContent = '—';
+    dd.dataset.val = '';
+  }
+  autoCalcDiff();
+}
+
+function autoCalcDiff() {
+  const due  = parseFloat(document.getElementById('ff_due')?.value)||0;
+  const paid = parseFloat(document.getElementById('ff_paid')?.value)||0;
+  const dd = document.getElementById('ff_diff');
+  if (!dd) return;
+  updateDiff({due, paid}, dd);
+}
+
+function updateDiff(rec, el) {
+  if (!el) return;
+  const due  = parseFloat(rec?.due)||0;
+  const paid = parseFloat(rec?.paid)||0;
+  const diff = paid - due;
+  if (!due && !paid) { el.textContent='—'; el.style.color='#5A5F7A'; return; }
+  el.textContent = (diff>=0?'+':'')+'¥'+fmt(Math.abs(diff));
+  el.style.color = diff > 0 ? '#6EE7B7' : diff < 0 ? '#F87171' : '#8B90A8';
+}
+
+function closeForm() {
+  document.getElementById('form-panel').style.display = 'none';
+  editingRecId = null;
+}
+
+function handleSave() {
+  const streamer = document.getElementById('ff_streamer')?.value.trim();
+  const checkin  = document.getElementById('ff_checkin')?.value;
+  const checkout = document.getElementById('ff_checkout')?.value;
+  const room     = document.getElementById('ff_room')?.value;
+  const due      = document.getElementById('ff_due')?.value.trim();
+  const paid     = document.getElementById('ff_paid')?.value.trim();
+  const remark   = document.getElementById('ff_remark')?.value.trim();
+  const daysEl   = document.getElementById('ff_days');
+  const days     = daysEl?.dataset.val !== undefined && daysEl.dataset.val !== ''
+                   ? daysEl.dataset.val
+                   : (checkin&&checkout ? Math.max(0,Math.round((new Date(checkout)-new Date(checkin))/(1000*3600*24))) : '');
+
+  if (!streamer && !checkin && !due) { toast('请至少填写主播姓名、入住日期或应付价格','err'); return; }
+
+  if (!data.records[activeBaseId]) data.records[activeBaseId] = [];
+  const recs = data.records[activeBaseId];
+
+  if (editingRecId) {
+    const idx = recs.findIndex(r=>r.id===editingRecId);
+    if (idx>=0) recs[idx] = { ...recs[idx], streamer, checkin, checkout, days, room, due, paid, remark, _updated: new Date().toLocaleString('zh-CN') };
+    toast('记录已更新');
+  } else {
+    recs.unshift({ id: genId(), streamer, checkin, checkout, days, room, due, paid, remark, _time: new Date().toLocaleString('zh-CN') });
+    toast('登记成功');
+  }
+  save();
+  closeForm();
+  renderAll();
+}
+
+// ── Records ──
+function getFilteredRecs() {
+  const q = (document.getElementById('rec-search')?.value||'').toLowerCase();
+  const recs = data.records[activeBaseId]||[];
+  if (!q) return recs;
+  return recs.filter(r => Object.values(r).some(v=>String(v).toLowerCase().includes(q)));
+}
+
+function renderRecords() {
+  const base = data.bases.find(b=>b.id===activeBaseId);
+  const filtered = getFilteredRecs();
+  const all = data.records[activeBaseId]||[];
+
+  document.getElementById('base-title-text').textContent = base?.name || '—';
+  document.getElementById('base-avatar').textContent = base?.icon||'🏠';
+  document.getElementById('base-subtitle').textContent = `共 ${all.length} 条住宿记录`;
+
+  const grid  = document.getElementById('records-grid');
+  const empty = document.getElementById('empty-state');
+  const q = document.getElementById('rec-search')?.value||'';
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    document.getElementById('empty-title').textContent = q ? '没有找到匹配的记录' : '暂无住宿记录';
+    document.getElementById('empty-sub').textContent  = q ? '请尝试其他关键词' : '点击右上角「新增登记」开始录入';
+  } else {
+    empty.style.display = 'none';
+    grid.innerHTML = '';
+    filtered.forEach((rec,i)=>{
+      const due  = parseFloat(rec.due)||0;
+      const paid = parseFloat(rec.paid)||0;
+      const diff = paid - due;
+      const hasDiff = due > 0 && diff !== 0;
+
+      let statusText = '', statusColor = '#6EE7B7';
+      if (due > 0) {
+        if (diff < 0)      { statusText='未结清'; statusColor='#F87171'; }
+        else if (diff > 0) { statusText='已超付'; statusColor='#FCD34D'; }
+        else               { statusText='已结清'; statusColor='#6EE7B7'; }
+      }
+
+      const card = document.createElement('div');
+      card.className = 'rec-card' + (hasDiff&&diff<0?' has-diff':'');
+      card.style.animationDelay = (i*0.03)+'s';
+      card.innerHTML = `
+        <div class="rec-card-top">
+          <div class="rec-card-main">
+            <div class="rec-avatar">🎙️</div>
+            <div>
+              <div class="rec-name">${esc(rec.streamer||'未填写主播')}</div>
+              <div class="rec-room">${esc(rec.room||'—')}</div>
+            </div>
+          </div>
+          <div class="rec-actions" onclick="event.stopPropagation()">
+            <button class="btn-icon btn-edit" onclick="openForm('${rec.id}')" title="编辑">✏️</button>
+            <button class="btn-icon btn-del"  onclick="askDelRec('${rec.id}')" title="删除">🗑</button>
+          </div>
+        </div>
+        <div class="rec-dates">
+          <span>${rec.checkin||'—'}</span>
+          <span class="arrow">→</span>
+          <span>${rec.checkout||'—'}</span>
+          ${rec.days ? `<span class="days-tag">${rec.days}天</span>` : ''}
+        </div>
+        <div class="rec-money">
+          <div class="rec-money-item">
+            <div class="rec-money-label">应付</div>
+            <div class="rec-money-val" style="color:#FCD34D">¥${fmt(due)}</div>
+          </div>
+          <div class="rec-money-item">
+            <div class="rec-money-label">已付</div>
+            <div class="rec-money-val" style="color:#34D399">¥${fmt(paid)}</div>
+          </div>
+          <div class="rec-money-item">
+            <div class="rec-money-label">差额</div>
+            <div class="rec-money-val" style="color:${diff>0?'#6EE7B7':diff<0?'#F87171':'#8B90A8'}">${diff>=0?'+':''}¥${fmt(diff)}</div>
+          </div>
+        </div>
+        <div class="rec-footer">
+          <span class="rec-time">登记：${rec._time||''}</span>
+          ${statusText?`<span class="status-tag" style="background:${statusColor}20;color:${statusColor}">${statusText}</span>`:''}
+        </div>
+      `;
+      card.onclick = () => openView(rec.id);
+      grid.appendChild(card);
+    });
+  }
+  renderStats();
+}
+
+// ── View ──
+let viewingId = null;
+function openView(id) {
+  viewingId = id;
+  const rec = (data.records[activeBaseId]||[]).find(r=>r.id===id);
+  if (!rec) return;
+  const due  = parseFloat(rec.due)||0;
+  const paid = parseFloat(rec.paid)||0;
+  const diff = paid - due;
+  document.getElementById('vm-title').textContent = rec.streamer || '住宿详情';
+  document.getElementById('vm-sub').textContent   = '登记时间：'+(rec._time||'');
+  const grid = document.getElementById('vm-grid');
+  grid.innerHTML = '';
+  const fields = [
+    {k:'主播',v:rec.streamer}, {k:'房型',v:rec.room},
+    {k:'入住日期',v:rec.checkin}, {k:'离店日期',v:rec.checkout},
+    {k:'入住天数',v:rec.days?(rec.days+'天'):''},
+    {k:'应付价格',v:due?'¥'+fmt(due):''},{k:'已付价格',v:paid?'¥'+fmt(paid):''},
+    {k:'差额',v:(due||paid)?(diff>=0?'+':'')+'¥'+fmt(diff):''},
+  ];
+  fields.forEach(({k,v})=>{
+    if (!v) return;
+    const d = document.createElement('div');
+    d.className = 'modal-field';
+    const color = k==='应付价格'?'#FCD34D':k==='已付价格'?'#34D399':k==='差额'?(diff>0?'#6EE7B7':diff<0?'#F87171':'#8B90A8'):'#E8EAF0';
+    d.innerHTML = `<div class="modal-field-key">${k}</div><div class="modal-field-val" style="color:${color}">${esc(v)}</div>`;
+    grid.appendChild(d);
+  });
+  if (rec.remark) {
+    const d = document.createElement('div');
+    d.className = 'modal-field';
+    d.style.gridColumn = '1/-1';
+    d.innerHTML = `<div class="modal-field-key">备注</div><div class="modal-field-val">${esc(rec.remark)}</div>`;
+    grid.appendChild(d);
+  }
+  document.getElementById('vm-updated').textContent = rec._updated ? '最后更新：'+rec._updated : '';
+  document.getElementById('view-modal').style.display = 'flex';
+}
+function viewEdit() { document.getElementById('view-modal').style.display='none'; openForm(viewingId); }
+function viewDel()  { document.getElementById('view-modal').style.display='none'; askDelRec(viewingId); }
+
+// ── Delete Record ──
+function askDelRec(id) { deletingRecId=id; document.getElementById('del-rec-modal').style.display='flex'; }
+function confirmDelRec() {
+  if (!deletingRecId) return;
+  data.records[activeBaseId] = (data.records[activeBaseId]||[]).filter(r=>r.id!==deletingRecId);
+  deletingRecId = null;
+  document.getElementById('del-rec-modal').style.display = 'none';
+  save(); toast('记录已删除','warn'); renderAll();
+}
+
+// ── Export / Import ──
+function exportData() {
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '主播基地住宿登记_'+new Date().toLocaleDateString('zh-CN').replace(/\//g,'-')+'.json';
+  a.click(); toast('数据导出成功');
+}
+function importData() { document.getElementById('import-file').click(); }
+function handleImport(e) {
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try { data=JSON.parse(ev.target.result); save(); renderAll(); toast('数据导入成功'); }
+    catch { toast('导入失败：格式错误','err'); }
+  };
+  reader.readAsText(file); e.target.value='';
+}
+
+// ── Utils ──
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmt(n) {
+  const v = parseFloat(n)||0;
+  return v.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+// ── Render All ──
+function renderAll() {
+  const total = Object.values(data.records).reduce((s,a)=>s+(a?.length||0),0);
+  document.getElementById('hdr-sub').textContent = `Streamer Base Registry · 共 ${total} 条记录`;
+
+  renderSidebar();
+
+  if (activeBaseId && data.bases.find(b=>b.id===activeBaseId)) {
+    document.getElementById('no-base').style.display = 'none';
+    document.getElementById('base-content').style.display = 'block';
+    renderRecords();
+  } else {
+    document.getElementById('no-base').style.display = 'block';
+    document.getElementById('base-content').style.display = 'none';
+    activeBaseId = null;
+  }
+}
+
+load();
+renderAll();
+</script>
+</body>
+</html>
